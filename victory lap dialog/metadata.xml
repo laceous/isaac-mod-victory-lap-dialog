@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<metadata>
+    <name>Victory Lap Dialog</name>
+    <directory>victory lap dialog</directory>
+    <id>2736356591</id>
+    <description>By default, the victory lap dialog is only displayed after defeating The Lamb. This mod adds it to the rest of the ending bosses after a big chest has dropped. There's 2 exceptions: if you beat Isaac while holding The Polaroid or if you beat Satan while holding The Negative.
+
+Mega Satan doesn't always drop a chest, but instead can go directly to a cutscene. To fix this, you can use one of these mods: [url=https://steamcommunity.com/sharedfiles/filedetails/?id=2667845009]NO Mega Satan auto cutscene[/url] or [url=https://steamcommunity.com/sharedfiles/filedetails/?id=938928749]AlwaysVoid[/url].
+
+If you're headed to The Beast then I'd suggest using: [url=https://steamcommunity.com/sharedfiles/filedetails/?id=2228672036]Victory Laps[/url].
+
+This mod uses a shader. I'd recommend installing: [url=https://steamcommunity.com/sharedfiles/filedetails/?id=2661947271]Shader Crash Fix[/url]</description>
+    <version>1.1</version>
+    <visibility>Public</visibility>
+    <tag id="Lua"/>
+    <tag id="Tweaks"/>
+</metadata>
