@@ -102,13 +102,6 @@ function mod:onEntityTakeDmg()
   end
 end
 
-function mod:isCurseOftheLabyrinth()
-  local level = game:GetLevel()
-  local curses = level:GetCurses()
-  
-  return curses & LevelCurse.CURSE_OF_LABYRINTH == LevelCurse.CURSE_OF_LABYRINTH
-end
-
 function mod:getButtonAction()
   local keyboard = 0
   
