@@ -8,12 +8,7 @@ mod.allowInitDialog = false
 mod.doRender = false
 mod.isYes = false
 mod.handleInput = false
-mod.blockInput = false
 mod.sprite = Sprite()
-
-function mod:onGameExit()
-  mod:resetVars()
-end
 
 function mod:onNewRoom()
   local room = game:GetRoom()
@@ -61,7 +56,6 @@ function mod:onRender(shaderName)
         mod.handleInput = true
       elseif mod.sprite:IsFinished('Dissappear') then
         mod.doRender = false
-        mod.blockInput = false
         if mod.isYes then
           game:SetStateFlag(GameStateFlag.STATE_BACKWARDS_PATH_INIT, false)
           game:SetStateFlag(GameStateFlag.STATE_BACKWARDS_PATH, false)
@@ -86,7 +80,7 @@ end
 
 -- this isn't perfect, it can't block keyboard inputs that other mods might be listening to (e.g. mod config menu)
 function mod:onInputAction(entity, inputHook, buttonAction)
-  if mod.blockInput then
+  if mod.doRender then
     if inputHook == InputHook.IS_ACTION_PRESSED or inputHook == InputHook.IS_ACTION_TRIGGERED then
       return false
     else -- GET_ACTION_VALUE
@@ -97,7 +91,7 @@ end
 
 -- filtered to ENTITY_PLAYER
 function mod:onEntityTakeDmg()
-  if mod.blockInput then
+  if mod.doRender then
     return false -- ignore damage (just in case)
   end
 end
@@ -135,7 +129,6 @@ function mod:resetVars()
   mod.doRender = false
   mod.isYes = false
   mod.handleInput = false
-  mod.blockInput = false
 end
 
 function mod:initDialog()
@@ -143,7 +136,6 @@ function mod:initDialog()
   mod.doRender = true
   mod.isYes = false
   mod.handleInput = false
-  mod.blockInput = true
 end
 
 function mod:toggleYesNo()
@@ -185,7 +177,6 @@ function mod:loadSprite()
 end
 
 mod:loadSprite()
-mod:AddCallback(ModCallbacks.MC_PRE_GAME_EXIT, mod.onGameExit)
 mod:AddCallback(ModCallbacks.MC_POST_NEW_ROOM, mod.onNewRoom)
 mod:AddCallback(ModCallbacks.MC_POST_UPDATE, mod.onUpdate)
 mod:AddCallback(ModCallbacks.MC_GET_SHADER_PARAMS, mod.onRender) -- MC_GET_SHADER_PARAMS draws over the HUD, MC_POST_RENDER draws under the HUD
