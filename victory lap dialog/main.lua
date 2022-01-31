@@ -4,11 +4,11 @@ local game = Game()
 
 mod.shaderName = 'VictoryLapDialog_DummyShader'
 
+mod.sprite = Sprite()
 mod.allowInitDialog = false
 mod.doRender = false
 mod.isYes = false
 mod.handleInput = false
-mod.sprite = Sprite()
 
 function mod:onNewRoom()
   local room = game:GetRoom()
@@ -49,8 +49,8 @@ function mod:onRender(shaderName)
     if game:IsPaused() then
       mod:initDialog()
     else
-      mod.sprite:Update()
       mod.sprite:Render(Isaac.WorldToRenderPosition(Vector(320,280)), Vector(0,0), Vector(0,0))
+      mod.sprite:Update()
       
       if mod.sprite:IsFinished('Appear') then
         mod.handleInput = true
@@ -132,6 +132,10 @@ function mod:resetVars()
 end
 
 function mod:initDialog()
+  if not mod.sprite:IsLoaded() then
+    mod:loadSprite()
+  end
+  
   mod.sprite:Play('Appear', true)
   mod.doRender = true
   mod.isYes = false
@@ -146,6 +150,12 @@ function mod:toggleYesNo()
     mod.sprite:SetFrame('Idle', 1)
     mod.isYes = true
   end
+end
+
+function mod:loadSprite()
+  mod.sprite:Load('gfx/ui/prompt_yesno.anm2', false)
+  mod.sprite:ReplaceSpritesheet(2, 'gfx/ui/prompt_victoryrun.png')
+  mod.sprite:LoadGraphics()
 end
 
 function mod:hasCollectible(collectible)
@@ -170,13 +180,6 @@ function mod:hasBigChest()
   return false
 end
 
-function mod:loadSprite()
-  mod.sprite:Load('gfx/ui/prompt_yesno.anm2', false)
-  mod.sprite:ReplaceSpritesheet(2, 'gfx/ui/prompt_victoryrun.png')
-  mod.sprite:LoadGraphics()
-end
-
-mod:loadSprite()
 mod:AddCallback(ModCallbacks.MC_POST_NEW_ROOM, mod.onNewRoom)
 mod:AddCallback(ModCallbacks.MC_POST_UPDATE, mod.onUpdate)
 mod:AddCallback(ModCallbacks.MC_GET_SHADER_PARAMS, mod.onRender) -- MC_GET_SHADER_PARAMS draws over the HUD, MC_POST_RENDER draws under the HUD
