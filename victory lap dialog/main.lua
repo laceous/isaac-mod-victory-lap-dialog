@@ -21,6 +21,10 @@ function mod:onNewRoom()
 end
 
 function mod:onUpdate()
+  if mod.doRender then
+    mod.sprite:Update()
+  end
+  
   if not game:IsGreedMode() and Isaac.GetChallenge() == Challenge.CHALLENGE_NULL and mod.allowInitDialog then
     local level = game:GetLevel()
     local room = level:GetCurrentRoom()
@@ -50,7 +54,6 @@ function mod:onRender(shaderName)
       mod:initDialog()
     else
       mod.sprite:Render(Isaac.WorldToRenderPosition(Vector(320,280)), Vector(0,0), Vector(0,0))
-      mod.sprite:Update()
       
       if mod.sprite:IsFinished('Appear') then
         mod.handleInput = true
