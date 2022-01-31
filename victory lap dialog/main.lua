@@ -60,10 +60,7 @@ function mod:onRender(shaderName)
       elseif mod.sprite:IsFinished('Dissappear') then
         mod.doRender = false
         if mod.isYes then
-          game:SetStateFlag(GameStateFlag.STATE_BACKWARDS_PATH_INIT, false)
-          game:SetStateFlag(GameStateFlag.STATE_BACKWARDS_PATH, false)
-          game:SetStateFlag(GameStateFlag.STATE_MAUSOLEUM_HEART_KILLED, false)
-          game:NextVictoryLap()
+          mod:doVictoryLap()
         end
       end
       
@@ -159,6 +156,13 @@ function mod:loadSprite()
   mod.sprite:Load('gfx/ui/prompt_yesno.anm2', false)
   mod.sprite:ReplaceSpritesheet(2, 'gfx/ui/prompt_victoryrun.png')
   mod.sprite:LoadGraphics()
+end
+
+function mod:doVictoryLap()
+  game:SetStateFlag(GameStateFlag.STATE_BACKWARDS_PATH_INIT, false)
+  game:SetStateFlag(GameStateFlag.STATE_BACKWARDS_PATH, false)
+  game:SetStateFlag(GameStateFlag.STATE_MAUSOLEUM_HEART_KILLED, false)
+  game:NextVictoryLap()
 end
 
 function mod:hasCollectible(collectible)
