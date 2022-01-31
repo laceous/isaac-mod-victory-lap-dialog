@@ -172,7 +172,7 @@ end
 
 function mod:loadSprite()
   mod.sprite:Load('gfx/ui/prompt_yesno.anm2', false)
-  mod.sprite:ReplaceSpritesheet(2, 'gfx/ui/prompt_victoryrun.png') -- animation editor shows this as 1
+  mod.sprite:ReplaceSpritesheet(2, 'gfx/ui/prompt_victoryrun.png')
   mod.sprite:LoadGraphics()
 end
 
