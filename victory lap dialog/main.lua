@@ -53,6 +53,16 @@ function mod:onRender(shaderName)
     if game:IsPaused() then
       mod:initDialog()
     else
+      -- mod config menu
+      if ModConfigMenu and ModConfigMenu.IsVisible then
+        ModConfigMenu.CloseConfigMenu()
+      end
+      
+      -- encyclopedia
+      if DeadSeaScrollsMenu and DeadSeaScrollsMenu.IsOpen() then
+        DeadSeaScrollsMenu.CloseMenu(true, true)
+      end
+      
       mod.sprite:Render(Isaac.WorldToRenderPosition(Vector(320,280)), Vector(0,0), Vector(0,0))
       
       if mod.sprite:IsFinished('Appear') then
