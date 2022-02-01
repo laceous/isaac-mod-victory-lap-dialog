@@ -53,16 +53,7 @@ function mod:onRender(shaderName)
     if game:IsPaused() then
       mod:initDialog()
     else
-      -- mod config menu
-      if ModConfigMenu and ModConfigMenu.IsVisible then
-        ModConfigMenu.CloseConfigMenu()
-      end
-      
-      -- encyclopedia
-      if DeadSeaScrollsMenu and DeadSeaScrollsMenu.IsOpen() then
-        DeadSeaScrollsMenu.CloseMenu(true, true)
-      end
-      
+      mod:closeOtherMods()
       mod.sprite:Render(Isaac.WorldToRenderPosition(Vector(320,280)), Vector(0,0), Vector(0,0))
       
       if mod.sprite:IsFinished('Appear') then
@@ -195,6 +186,18 @@ function mod:hasBigChest()
   end
   
   return false
+end
+
+function mod:closeOtherMods()
+  -- mod config menu
+  if ModConfigMenu and ModConfigMenu.IsVisible then
+    ModConfigMenu.CloseConfigMenu()
+  end
+  
+  -- encyclopedia
+  if DeadSeaScrollsMenu and DeadSeaScrollsMenu.IsOpen() then
+    DeadSeaScrollsMenu.CloseMenu(true, true)
+  end
 end
 
 mod:AddCallback(ModCallbacks.MC_POST_NEW_ROOM, mod.onNewRoom)
