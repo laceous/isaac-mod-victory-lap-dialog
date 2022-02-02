@@ -8,13 +8,13 @@
             attribute float Scale;
             varying vec4 Color0;
             varying vec2 TexCoord0;
-            varying vec4 RenderDataOut; 
+            varying vec4 RenderDataOut;
             varying float ScaleOut;
             uniform mat4 Transform;
             void main(void)
             {
                 RenderDataOut = RenderData;
-                ScaleOut = Scale;         // Passing data to fragment shader
+                ScaleOut = Scale;
                 Color0 = Color;
                 TexCoord0 = TexCoord;
                 gl_Position = Transform * vec4(Position.xyz, 1.0);
