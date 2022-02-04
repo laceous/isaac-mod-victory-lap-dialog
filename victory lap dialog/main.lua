@@ -179,7 +179,7 @@ function mod:hasCollectible(collectible)
 end
 
 function mod:hasBigChest()
-  for _, entity in ipairs(Isaac.GetRoomEntities()) do
+  for _, entity in ipairs(Isaac.GetRoomEntities()) do -- game:GetRoom():GetEntities()
     if entity.Type == EntityType.ENTITY_PICKUP and entity.Variant == PickupVariant.PICKUP_BIGCHEST then
       return true
     end
