@@ -5,42 +5,17 @@ local game = Game()
 mod.shaderName = 'VictoryLapDialog_DummyShader'
 
 mod.sprite = Sprite()
-mod.allowInitDialog = false
 mod.doRender = false
 mod.isYes = false
 mod.handleInput = false
 
 function mod:onNewRoom()
-  local room = game:GetRoom()
-  
   mod:resetVars()
-  
-  if not room:IsClear() then
-    mod.allowInitDialog = true
-  end
 end
 
 function mod:onUpdate()
   if mod.doRender then
     mod.sprite:Update()
-  end
-  
-  if not game:IsGreedMode() and Isaac.GetChallenge() == Challenge.CHALLENGE_NULL and mod.allowInitDialog then
-    local level = game:GetLevel()
-    local room = level:GetCurrentRoom()
-    local roomDesc = level:GetCurrentRoomDesc()
-    local stage = level:GetStage()
-    
-    if room:GetType() == RoomType.ROOM_BOSS and room:IsClear() then
-      if not (stage == LevelStage.STAGE5 and     level:IsAltStage() and roomDesc.GridIndex >= 0 and mod:hasCollectible(CollectibleType.COLLECTIBLE_POLAROID)) and -- isaac w/ polaroid
-         not (stage == LevelStage.STAGE5 and not level:IsAltStage() and roomDesc.GridIndex >= 0 and mod:hasCollectible(CollectibleType.COLLECTIBLE_NEGATIVE)) and -- satan w/ negative
-         not (stage == LevelStage.STAGE6 and not level:IsAltStage() and roomDesc.GridIndex >= 0) then                                                             -- the lamb
-           if mod:hasBigChest() then
-             mod:initDialog()
-           end
-           mod.allowInitDialog = false
-      end
-    end
   end
 end
 
@@ -75,6 +50,23 @@ function mod:onRender(shaderName)
           mod.handleInput = false
         end
       end
+    end
+  end
+end
+
+-- filtered to PICKUP_BIGCHEST
+function mod:onPickupInit(pickup)
+  local level = game:GetLevel()
+  local room = level:GetCurrentRoom()
+  local roomDesc = level:GetCurrentRoomDesc()
+  local stage = level:GetStage()
+  
+  if not game:IsGreedMode() and Isaac.GetChallenge() == Challenge.CHALLENGE_NULL and room:GetType() == RoomType.ROOM_BOSS then -- room:IsClear doesn't work with mega satan
+    if not (stage == LevelStage.STAGE5 and     level:IsAltStage() and roomDesc.GridIndex >= 0 and mod:hasCollectible(CollectibleType.COLLECTIBLE_POLAROID)) and -- isaac w/ polaroid
+       not (stage == LevelStage.STAGE5 and not level:IsAltStage() and roomDesc.GridIndex >= 0 and mod:hasCollectible(CollectibleType.COLLECTIBLE_NEGATIVE)) and -- satan w/ negative
+       not (stage == LevelStage.STAGE6 and not level:IsAltStage() and roomDesc.GridIndex >= 0)                                                                  -- the lamb
+    then
+      mod:initDialog()
     end
   end
 end
@@ -126,7 +118,6 @@ function mod:getButtonAction()
 end
 
 function mod:resetVars()
-  mod.allowInitDialog = false
   mod.doRender = false
   mod.isYes = false
   mod.handleInput = false
@@ -178,16 +169,6 @@ function mod:hasCollectible(collectible)
   return false
 end
 
-function mod:hasBigChest()
-  for _, entity in ipairs(Isaac.GetRoomEntities()) do -- game:GetRoom():GetEntities()
-    if entity.Type == EntityType.ENTITY_PICKUP and entity.Variant == PickupVariant.PICKUP_BIGCHEST then
-      return true
-    end
-  end
-  
-  return false
-end
-
 function mod:closeOtherMods()
   -- mod config menu
   if ModConfigMenu and ModConfigMenu.IsVisible then
@@ -203,5 +184,6 @@ end
 mod:AddCallback(ModCallbacks.MC_POST_NEW_ROOM, mod.onNewRoom)
 mod:AddCallback(ModCallbacks.MC_POST_UPDATE, mod.onUpdate)
 mod:AddCallback(ModCallbacks.MC_GET_SHADER_PARAMS, mod.onRender) -- MC_GET_SHADER_PARAMS draws over the HUD, MC_POST_RENDER draws under the HUD
+mod:AddCallback(ModCallbacks.MC_POST_PICKUP_INIT, mod.onPickupInit, PickupVariant.PICKUP_BIGCHEST)
 mod:AddCallback(ModCallbacks.MC_INPUT_ACTION, mod.onInputAction)
 mod:AddCallback(ModCallbacks.MC_ENTITY_TAKE_DMG, mod.onEntityTakeDmg, EntityType.ENTITY_PLAYER)
