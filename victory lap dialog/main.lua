@@ -61,7 +61,7 @@ function mod:onPickupInit(pickup)
   local roomDesc = level:GetCurrentRoomDesc()
   local stage = level:GetStage()
   
-  if not game:IsGreedMode() and Isaac.GetChallenge() == Challenge.CHALLENGE_NULL and room:GetType() == RoomType.ROOM_BOSS then -- room:IsClear doesn't work with mega satan
+  if not game:IsGreedMode() and Isaac.GetChallenge() == Challenge.CHALLENGE_NULL and (room:GetType() == RoomType.ROOM_BOSS or mod:isDogma()) then -- room:IsClear doesn't work with mega satan
     if not (stage == LevelStage.STAGE5 and     level:IsAltStage() and roomDesc.GridIndex >= 0 and mod:hasCollectible(CollectibleType.COLLECTIBLE_POLAROID)) and -- isaac w/ polaroid
        not (stage == LevelStage.STAGE5 and not level:IsAltStage() and roomDesc.GridIndex >= 0 and mod:hasCollectible(CollectibleType.COLLECTIBLE_NEGATIVE)) and -- satan w/ negative
        not (stage == LevelStage.STAGE6 and not level:IsAltStage() and roomDesc.GridIndex >= 0)                                                                  -- the lamb
@@ -169,6 +169,16 @@ function mod:hasCollectible(collectible)
   return false
 end
 
+-- type is ROOM_DEFAULT
+function mod:isDogma()
+  local level = game:GetLevel()
+  local roomDesc = level:GetCurrentRoomDesc()
+  
+  return level:GetStage() == LevelStage.STAGE8 and
+         roomDesc.Data.Shape == RoomShape.ROOMSHAPE_1x2 and
+         roomDesc.GridIndex == 109 -- living room
+end
+
 function mod:closeOtherMods()
   -- mod config menu
   if ModConfigMenu and ModConfigMenu.IsVisible then
@@ -186,4 +196,4 @@ mod:AddCallback(ModCallbacks.MC_POST_UPDATE, mod.onUpdate)
 mod:AddCallback(ModCallbacks.MC_GET_SHADER_PARAMS, mod.onRender) -- MC_GET_SHADER_PARAMS draws over the HUD, MC_POST_RENDER draws under the HUD
 mod:AddCallback(ModCallbacks.MC_POST_PICKUP_INIT, mod.onPickupInit, PickupVariant.PICKUP_BIGCHEST)
 mod:AddCallback(ModCallbacks.MC_INPUT_ACTION, mod.onInputAction)
-mod:AddCallback(ModCallbacks.MC_ENTITY_TAKE_DMG, mod.onEntityTakeDmg, EntityType.ENTITY_PLAYER)
+mod:AddCallback(ModCallbacks.MC_ENTITY_TAKE_DMG, mod.onEntityTakeDmg, EntityType.ENTITY_PLAYER) -- MC_PRE_PLAYER_COLLISION
