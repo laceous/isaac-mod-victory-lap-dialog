@@ -3,18 +3,43 @@ local json = require('json')
 local game = Game()
 
 mod.shaderName = 'VictoryLapDialog_DummyShader'
+mod.rngShiftIdx = 35
 
 mod.sprite = Sprite()
 mod.doRender = false
 mod.isYes = false
 mod.handleInput = false
 
+mod.state = {}
+mod.state.enableDialog = true
+
+function mod:onGameStart()
+  if mod:HasData() then
+    local _, state = pcall(json.decode, mod:LoadData())
+    
+    if type(state) == 'table' then
+      if type(state.enableDialog) == 'boolean' then
+        mod.state.enableDialog = state.enableDialog
+      end
+    end
+  end
+end
+
+function mod:onGameExit()
+  mod:save()
+  mod:resetVars()
+end
+
+function mod:save()
+  mod:SaveData(json.encode(mod.state))
+end
+
 function mod:onNewRoom()
   mod:resetVars()
 end
 
 function mod:onUpdate()
-  if mod.doRender then
+  if mod.doRender and not game:IsPaused() then
     mod.sprite:Update()
   end
 end
@@ -29,7 +54,7 @@ function mod:onRender(shaderName)
       mod:initDialog()
     else
       mod:closeOtherMods()
-      mod.sprite:Render(Isaac.WorldToRenderPosition(Vector(320,280)), Vector(0,0), Vector(0,0))
+      mod.sprite:Render(Isaac.WorldToRenderPosition(Vector(320,280)), Vector.Zero, Vector.Zero)
       
       if mod.sprite:IsFinished('Appear') then
         mod.handleInput = true
@@ -56,24 +81,51 @@ end
 
 -- filtered to PICKUP_BIGCHEST
 function mod:onPickupInit(pickup)
-  local level = game:GetLevel()
-  local room = level:GetCurrentRoom()
-  local roomDesc = level:GetCurrentRoomDesc()
-  local stage = level:GetStage()
+  if not mod.state.enableDialog then
+    return
+  end
   
-  if not game:IsGreedMode() and Isaac.GetChallenge() == Challenge.CHALLENGE_NULL and (room:GetType() == RoomType.ROOM_BOSS or mod:isDogma()) then -- room:IsClear doesn't work with mega satan
-    if not (stage == LevelStage.STAGE5 and     level:IsAltStage() and roomDesc.GridIndex >= 0 and mod:hasCollectible(CollectibleType.COLLECTIBLE_POLAROID)) and -- isaac w/ polaroid
-       not (stage == LevelStage.STAGE5 and not level:IsAltStage() and roomDesc.GridIndex >= 0 and mod:hasCollectible(CollectibleType.COLLECTIBLE_NEGATIVE)) and -- satan w/ negative
-       not (stage == LevelStage.STAGE6 and not level:IsAltStage() and roomDesc.GridIndex >= 0)                                                                  -- the lamb
+  local room = game:GetRoom()
+  
+  -- room:IsClear doesn't work with mega satan
+  if not game:IsGreedMode() and not mod:isAnyChallenge() and (room:GetType() == RoomType.ROOM_BOSS or mod:isDogma()) then
+    if not (mod:isIsaac() and mod:hasCollectible(CollectibleType.COLLECTIBLE_POLAROID)) and
+       not (mod:isSatan() and mod:hasCollectible(CollectibleType.COLLECTIBLE_NEGATIVE)) and
+       not mod:isTheLamb()
     then
       mod:initDialog()
     end
   end
 end
 
+-- filtered to ENTITY_THE_LAMB and ENTITY_ATTACKFLY
+-- 273.0.0 (The Lamb) will come through here, but 273.10.0 (Lamb Body) will not
+function mod:onNpcDeath(entityNpc)
+  if mod.state.enableDialog then
+    return
+  end
+  
+  if mod:isTheLamb() then
+    mod:doLambLogic()
+  end
+end
+
+-- filtered to ENTITY_THE_LAMB
+-- we can check 273.10.0 (Lamb Body) from here
+-- this fires off before onNpcDeath
+function mod:onEntityKill(entity)
+  if mod.state.enableDialog then
+    return
+  end
+  
+  if mod:isTheLamb() and entity.Variant == 10 then -- lamb body
+    mod:doLambLogic()
+  end
+end
+
 -- this isn't perfect, it can't block keyboard inputs that other mods might be listening to (e.g. mod config menu)
 function mod:onInputAction(entity, inputHook, buttonAction)
-  if mod.doRender then
+  if mod.doRender and not game:IsPaused() then
     if inputHook == InputHook.IS_ACTION_PRESSED or inputHook == InputHook.IS_ACTION_TRIGGERED then
       return false
     else -- GET_ACTION_VALUE
@@ -84,7 +136,7 @@ end
 
 -- filtered to ENTITY_PLAYER
 function mod:onEntityTakeDmg()
-  if mod.doRender then
+  if mod.doRender and not game:IsPaused() then
     return false -- ignore damage (just in case)
   end
 end
@@ -169,6 +221,82 @@ function mod:hasCollectible(collectible)
   return false
 end
 
+function mod:doLambLogic()
+  if not mod:hasActiveLambEnemy() then
+    local room = game:GetRoom()
+    room:SetClear(true) -- short circuit the room logic, including spawning the chest, void portal, and victory lap dialog
+    
+    local centerIdx = room:GetGridIndex(room:GetCenterPos())
+    mod:spawnBigChest(room:GetGridPosition(centerIdx))
+    
+    local rng = RNG()
+    rng:SetSeed(room:GetSpawnSeed(), mod.rngShiftIdx) -- GetAwardSeed, GetDecorationSeed
+    if rng:RandomFloat() < 0.2 then -- 20%
+      mod:spawnVoidPortal(room:GetGridPosition(centerIdx + (2 * 15))) -- 2 spaces lower
+    end
+  end
+end
+
+function mod:hasActiveLambEnemy()
+  for _, v in ipairs(Isaac.GetRoomEntities()) do
+    if v:IsActiveEnemy(false) then
+      if v.Type == EntityType.ENTITY_THE_LAMB and v.Variant == 10 then -- lamb body needs special handling
+        if v.HitPoints > 0 then
+          return true
+        end
+      else
+        return true
+      end
+    end
+  end
+  
+  return false
+end
+
+function mod:spawnBigChest(pos)
+  Isaac.Spawn(EntityType.ENTITY_PICKUP, PickupVariant.PICKUP_BIGCHEST, 0, pos, Vector.Zero, nil)
+end
+
+function mod:spawnVoidPortal(pos)
+  local portal = Isaac.GridSpawn(GridEntityType.GRID_TRAPDOOR, 1, pos, true)
+  portal.VarData = 1
+  portal:GetSprite():Load('gfx/grid/voidtrapdoor.anm2', true)
+end
+
+function mod:isAnyChallenge()
+  return Isaac.GetChallenge() ~= Challenge.CHALLENGE_NULL
+end
+
+function mod:isIsaac()
+  local level = game:GetLevel()
+  local roomDesc = level:GetCurrentRoomDesc()
+  
+  return level:GetStage() == LevelStage.STAGE5 and
+         level:IsAltStage() and
+         roomDesc.Data.Type == RoomType.ROOM_BOSS and
+         roomDesc.GridIndex >= 0
+end
+
+function mod:isSatan()
+  local level = game:GetLevel()
+  local roomDesc = level:GetCurrentRoomDesc()
+  
+  return level:GetStage() == LevelStage.STAGE5 and
+         not level:IsAltStage() and
+         roomDesc.Data.Type == RoomType.ROOM_BOSS and
+         roomDesc.GridIndex >= 0
+end
+
+function mod:isTheLamb()
+  local level = game:GetLevel()
+  local roomDesc = level:GetCurrentRoomDesc()
+  
+  return level:GetStage() == LevelStage.STAGE6 and
+         not level:IsAltStage() and
+         roomDesc.Data.Type == RoomType.ROOM_BOSS and
+         roomDesc.GridIndex >= 0
+end
+
 -- type is ROOM_DEFAULT
 function mod:isDogma()
   local level = game:GetLevel()
@@ -191,9 +319,44 @@ function mod:closeOtherMods()
   end
 end
 
+-- start ModConfigMenu --
+function mod:setupModConfigMenu()
+  for _, v in ipairs({ 'Settings' }) do
+    ModConfigMenu.RemoveSubcategory(mod.Name, v)
+  end
+  ModConfigMenu.AddSetting(
+    mod.Name,
+    'Settings',
+    {
+      Type = ModConfigMenu.OptionType.BOOLEAN,
+      CurrentSetting = function()
+        return mod.state.enableDialog
+      end,
+      Display = function()
+        return (mod.state.enableDialog and 'Enable' or 'Disable') .. ' victory lap dialog'
+      end,
+      OnChange = function(b)
+        mod.state.enableDialog = b
+        mod:save()
+      end,
+      Info = { 'Enable: show dialog after a big chest drops', 'Disable: disable everywhere including The Lamb' }
+    }
+  )
+end
+-- end ModConfigMenu --
+
+mod:AddCallback(ModCallbacks.MC_POST_GAME_STARTED, mod.onGameStart)
+mod:AddCallback(ModCallbacks.MC_PRE_GAME_EXIT, mod.onGameExit)
 mod:AddCallback(ModCallbacks.MC_POST_NEW_ROOM, mod.onNewRoom)
 mod:AddCallback(ModCallbacks.MC_POST_UPDATE, mod.onUpdate)
 mod:AddCallback(ModCallbacks.MC_GET_SHADER_PARAMS, mod.onRender) -- MC_GET_SHADER_PARAMS draws over the HUD, MC_POST_RENDER draws under the HUD
 mod:AddCallback(ModCallbacks.MC_POST_PICKUP_INIT, mod.onPickupInit, PickupVariant.PICKUP_BIGCHEST)
+mod:AddCallback(ModCallbacks.MC_POST_NPC_DEATH, mod.onNpcDeath, EntityType.ENTITY_THE_LAMB)     -- lamb
+mod:AddCallback(ModCallbacks.MC_POST_NPC_DEATH, mod.onNpcDeath, EntityType.ENTITY_ATTACKFLY)    -- lamb body can spawn flies
+mod:AddCallback(ModCallbacks.MC_POST_ENTITY_KILL, mod.onEntityKill, EntityType.ENTITY_THE_LAMB) -- lamb body
 mod:AddCallback(ModCallbacks.MC_INPUT_ACTION, mod.onInputAction)
 mod:AddCallback(ModCallbacks.MC_ENTITY_TAKE_DMG, mod.onEntityTakeDmg, EntityType.ENTITY_PLAYER) -- MC_PRE_PLAYER_COLLISION
+
+if ModConfigMenu then
+  mod:setupModConfigMenu()
+end

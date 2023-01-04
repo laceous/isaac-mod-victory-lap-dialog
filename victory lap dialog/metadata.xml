@@ -9,8 +9,10 @@ Mega Satan doesn't always drop a chest, but instead can go directly to a cutscen
 
 If you're headed to The Beast then I'd suggest using: [url=https://steamcommunity.com/sharedfiles/filedetails/?id=2908633985]No Auto-Cutscenes[/url], [url=https://steamcommunity.com/sharedfiles/filedetails/?id=2228672036]Victory Laps[/url], or [url=https://steamcommunity.com/sharedfiles/filedetails/?id=2488877801]Victory Laps at Home[/url].
 
-This mod uses a shader. I'd recommend installing: [url=https://steamcommunity.com/sharedfiles/filedetails/?id=2661947271]Shader Crash Fix[/url].</description>
-    <version>1.13</version>
+This mod uses a shader. I'd recommend installing: [url=https://steamcommunity.com/sharedfiles/filedetails/?id=2661947271]Shader Crash Fix[/url].
+
+Mod Config Menu can be used to enable or disable the victory lap dialog. Disabling includes disabling it after The Lamb.</description>
+    <version>1.14</version>
     <visibility>Public</visibility>
     <tag id="Lua"/>
     <tag id="Bosses"/>
