@@ -5,6 +5,9 @@ local game = Game()
 mod.shaderName = 'VictoryLapDialog_DummyShader'
 mod.rngShiftIdx = 35
 
+mod.onRenderHasRun = false
+mod.secondRendererRemoved = false
+
 mod.sprite = Sprite()
 mod.doRender = false
 mod.isYes = false
@@ -44,11 +47,34 @@ function mod:onUpdate()
   end
 end
 
-function mod:onRender(shaderName)
+-- MC_POST_RENDER runs before MC_GET_SHADER_PARAMS
+-- if shaders.xml doesn't exist then we'll use onRender to draw under the HUD
+function mod:onRender()
+  if not mod.onRenderHasRun then
+    mod.onRenderHasRun = true
+  elseif not mod.secondRendererRemoved then
+    mod:RemoveCallback(ModCallbacks.MC_GET_SHADER_PARAMS, mod.onRenderShader)
+    mod.secondRendererRemoved = true
+  else
+    mod:doRenderLogic()
+  end
+end
+
+-- if shaders.xml exists then we'll use onRenderShader to draw over the HUD
+function mod:onRenderShader(shaderName)
   if shaderName ~= mod.shaderName then
     return
   end
   
+  if not mod.secondRendererRemoved then
+    mod:RemoveCallback(ModCallbacks.MC_POST_RENDER, mod.onRender)
+    mod.secondRendererRemoved = true
+  else
+    mod:doRenderLogic()
+  end
+end
+
+function mod:doRenderLogic()
   if mod.doRender then
     if game:IsPaused() then
       mod:initDialog()
@@ -138,6 +164,12 @@ end
 function mod:onEntityTakeDmg()
   if mod.doRender and not game:IsPaused() then
     return false -- ignore damage (just in case)
+  end
+end
+
+function mod:onPrePlayerCollision()
+  if mod.doRender and not game:IsPaused() then
+    return true -- ignore collision
   end
 end
 
@@ -349,13 +381,15 @@ mod:AddCallback(ModCallbacks.MC_POST_GAME_STARTED, mod.onGameStart)
 mod:AddCallback(ModCallbacks.MC_PRE_GAME_EXIT, mod.onGameExit)
 mod:AddCallback(ModCallbacks.MC_POST_NEW_ROOM, mod.onNewRoom)
 mod:AddCallback(ModCallbacks.MC_POST_UPDATE, mod.onUpdate)
-mod:AddCallback(ModCallbacks.MC_GET_SHADER_PARAMS, mod.onRender) -- MC_GET_SHADER_PARAMS draws over the HUD, MC_POST_RENDER draws under the HUD
+mod:AddCallback(ModCallbacks.MC_POST_RENDER, mod.onRender)             -- MC_POST_RENDER draws under the HUD
+mod:AddCallback(ModCallbacks.MC_GET_SHADER_PARAMS, mod.onRenderShader) -- MC_GET_SHADER_PARAMS draws over the HUD
 mod:AddCallback(ModCallbacks.MC_POST_PICKUP_INIT, mod.onPickupInit, PickupVariant.PICKUP_BIGCHEST)
 mod:AddCallback(ModCallbacks.MC_POST_NPC_DEATH, mod.onNpcDeath, EntityType.ENTITY_THE_LAMB)     -- lamb
 mod:AddCallback(ModCallbacks.MC_POST_NPC_DEATH, mod.onNpcDeath, EntityType.ENTITY_ATTACKFLY)    -- lamb body can spawn flies
 mod:AddCallback(ModCallbacks.MC_POST_ENTITY_KILL, mod.onEntityKill, EntityType.ENTITY_THE_LAMB) -- lamb body
 mod:AddCallback(ModCallbacks.MC_INPUT_ACTION, mod.onInputAction)
-mod:AddCallback(ModCallbacks.MC_ENTITY_TAKE_DMG, mod.onEntityTakeDmg, EntityType.ENTITY_PLAYER) -- MC_PRE_PLAYER_COLLISION
+mod:AddCallback(ModCallbacks.MC_ENTITY_TAKE_DMG, mod.onEntityTakeDmg, EntityType.ENTITY_PLAYER)
+mod:AddCallback(ModCallbacks.MC_PRE_PLAYER_COLLISION, mod.onPrePlayerCollision)
 
 if ModConfigMenu then
   mod:setupModConfigMenu()
