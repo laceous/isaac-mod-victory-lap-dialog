@@ -127,6 +127,10 @@ end
 -- filtered to ENTITY_THE_LAMB and ENTITY_ATTACKFLY
 -- 273.0.0 (The Lamb) will come through here, but 273.10.0 (Lamb Body) will not
 function mod:onNpcDeath(entityNpc)
+  if game:IsGreedMode() or mod:isAnyChallenge() then
+    return
+  end
+  
   if mod.state.enableDialog then
     return
   end
@@ -140,6 +144,10 @@ end
 -- we can check 273.10.0 (Lamb Body) from here
 -- this fires off before onNpcDeath
 function mod:onEntityKill(entity)
+  if game:IsGreedMode() or mod:isAnyChallenge() then
+    return
+  end
+  
   if mod.state.enableDialog then
     return
   end
