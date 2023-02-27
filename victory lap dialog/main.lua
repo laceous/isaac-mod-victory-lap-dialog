@@ -279,7 +279,7 @@ end
 
 function mod:hasActiveLambEnemy()
   for _, v in ipairs(Isaac.GetRoomEntities()) do
-    if v:IsActiveEnemy(false) then
+    if v:IsActiveEnemy(false) and v.Type ~= EntityType.ENTITY_FROZEN_ENEMY then
       if v.Type == EntityType.ENTITY_THE_LAMB and v.Variant == 10 then -- lamb body needs special handling
         if v.HitPoints > 0 then
           return true
