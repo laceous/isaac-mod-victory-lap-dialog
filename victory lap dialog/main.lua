@@ -45,6 +45,22 @@ function mod:onUpdate()
   if mod.doRender and not game:IsPaused() then
     mod.sprite:Update()
   end
+  
+  if game:IsGreedMode() or mod:isAnyChallenge() then
+    return
+  end
+  
+  if mod.state.enableDialog then
+    return
+  end
+  
+  local room = game:GetRoom()
+  
+  -- doing this here rather than in MC_POST_NPC_DEATH/MC_POST_ENTITY_KILL
+  -- because certain things like friendly ball w/ attack flies don't trigger those callbacks
+  if mod:isTheLamb() and not room:IsClear() then
+    mod:doLambLogic()
+  end
 end
 
 -- MC_POST_RENDER runs before MC_GET_SHADER_PARAMS
@@ -121,39 +137,6 @@ function mod:onPickupInit(pickup)
     then
       mod:initDialog()
     end
-  end
-end
-
--- filtered to ENTITY_THE_LAMB and ENTITY_ATTACKFLY
--- 273.0.0 (The Lamb) will come through here, but 273.10.0 (Lamb Body) will not
-function mod:onNpcDeath(entityNpc)
-  if game:IsGreedMode() or mod:isAnyChallenge() then
-    return
-  end
-  
-  if mod.state.enableDialog then
-    return
-  end
-  
-  if mod:isTheLamb() then
-    mod:doLambLogic()
-  end
-end
-
--- filtered to ENTITY_THE_LAMB
--- we can check 273.10.0 (Lamb Body) from here
--- this fires off before onNpcDeath
-function mod:onEntityKill(entity)
-  if game:IsGreedMode() or mod:isAnyChallenge() then
-    return
-  end
-  
-  if mod.state.enableDialog then
-    return
-  end
-  
-  if mod:isTheLamb() and entity.Variant == 10 then -- lamb body
-    mod:doLambLogic()
   end
 end
 
@@ -279,14 +262,8 @@ end
 
 function mod:hasActiveLambEnemy()
   for _, v in ipairs(Isaac.GetRoomEntities()) do
-    if v:IsActiveEnemy(false) and v.Type ~= EntityType.ENTITY_FROZEN_ENEMY then -- EntityFlag.FLAG_ICE_FROZEN
-      if v.Type == EntityType.ENTITY_THE_LAMB and v.Variant == 10 then -- lamb body needs special handling
-        if v.HitPoints > 0 then -- EntityFlag.FLAG_BOSSDEATH_TRIGGERED
-          return true
-        end
-      else
-        return true
-      end
+    if v:IsActiveEnemy(true) and v:CanShutDoors() then
+      return true
     end
   end
   
@@ -392,9 +369,6 @@ mod:AddCallback(ModCallbacks.MC_POST_UPDATE, mod.onUpdate)
 mod:AddCallback(ModCallbacks.MC_POST_RENDER, mod.onRender)             -- MC_POST_RENDER draws under the HUD
 mod:AddCallback(ModCallbacks.MC_GET_SHADER_PARAMS, mod.onRenderShader) -- MC_GET_SHADER_PARAMS draws over the HUD
 mod:AddCallback(ModCallbacks.MC_POST_PICKUP_INIT, mod.onPickupInit, PickupVariant.PICKUP_BIGCHEST)
-mod:AddCallback(ModCallbacks.MC_POST_NPC_DEATH, mod.onNpcDeath, EntityType.ENTITY_THE_LAMB)     -- lamb
-mod:AddCallback(ModCallbacks.MC_POST_NPC_DEATH, mod.onNpcDeath, EntityType.ENTITY_ATTACKFLY)    -- lamb body can spawn flies
-mod:AddCallback(ModCallbacks.MC_POST_ENTITY_KILL, mod.onEntityKill, EntityType.ENTITY_THE_LAMB) -- lamb body
 mod:AddCallback(ModCallbacks.MC_INPUT_ACTION, mod.onInputAction)
 mod:AddCallback(ModCallbacks.MC_ENTITY_TAKE_DMG, mod.onEntityTakeDmg, EntityType.ENTITY_PLAYER)
 mod:AddCallback(ModCallbacks.MC_PRE_PLAYER_COLLISION, mod.onPrePlayerCollision)

@@ -12,7 +12,7 @@ If you're headed to The Beast then I'd suggest using: [url=https://steamcommunit
 This mod uses a shader which allows us to draw over the HUD. I'd recommend installing: [url=https://steamcommunity.com/sharedfiles/filedetails/?id=2661947271]Shader Crash Fix[/url]. If the shader is causing any issues then you can delete the shaders.xml file that comes with this mod. The code will automatically fall back to using the normal renderer which draws under the HUD.
 
 Mod Config Menu can be used to enable or disable the victory lap dialog. Disabling includes disabling it after The Lamb.</description>
-    <version>1.18</version>
+    <version>1.19</version>
     <visibility>Public</visibility>
     <tag id="Lua"/>
     <tag id="Bosses"/>
