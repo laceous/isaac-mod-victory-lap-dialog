@@ -13,6 +13,8 @@ mod.doRender = false
 mod.isYes = false
 mod.handleInput = false
 
+mod.input = {}
+
 mod.state = {}
 mod.state.enableDialog = true
 
@@ -140,17 +142,6 @@ function mod:onPickupInit(pickup)
   end
 end
 
--- this isn't perfect, it can't block keyboard inputs that other mods might be listening to (e.g. mod config menu)
-function mod:onInputAction(entity, inputHook, buttonAction)
-  if mod.doRender and not game:IsPaused() then
-    if inputHook == InputHook.IS_ACTION_PRESSED or inputHook == InputHook.IS_ACTION_TRIGGERED then
-      return false
-    else -- GET_ACTION_VALUE
-      return 0
-    end
-  end
-end
-
 -- filtered to ENTITY_PLAYER
 function mod:onEntityTakeDmg()
   if mod.doRender and not game:IsPaused() then
@@ -164,14 +155,101 @@ function mod:onPrePlayerCollision()
   end
 end
 
+-- block game input
+function mod:onInputAction(entity, inputHook, buttonAction)
+  if mod.doRender and not game:IsPaused() then
+    if inputHook == InputHook.IS_ACTION_PRESSED or inputHook == InputHook.IS_ACTION_TRIGGERED then
+      return false
+    else -- GET_ACTION_VALUE
+      return 0
+    end
+  end
+end
+
+-- block mod input
+function mod:overrideInput()
+  mod.input.getActionValue = Input.GetActionValue
+  mod.input.getButtonValue = Input.GetButtonValue
+  mod.input.getMousePosition = Input.GetMousePosition
+  mod.input.isActionPressed = Input.IsActionPressed
+  mod.input.isActionTriggered = Input.IsActionTriggered
+  mod.input.isButtonPressed = Input.IsButtonPressed
+  mod.input.isButtonTriggered = Input.IsButtonTriggered
+  mod.input.isMouseBtnPressed = Input.IsMouseBtnPressed
+  
+  Input.GetActionValue = function(action, controllerId)
+    if mod.doRender and not game:IsPaused() then
+      return 0
+    end
+    
+    return mod.input.getActionValue(action, controllerId)
+  end
+  
+  Input.GetButtonValue = function(button, controllerId)
+    if mod.doRender and not game:IsPaused() then
+      return 0
+    end
+    
+    return mod.input.getButtonValue(button, controllerId)
+  end
+  
+  Input.GetMousePosition = function(gameCoords)
+    if mod.doRender and not game:IsPaused() then
+      return Vector.Zero
+    end
+    
+    return mod.input.getMousePosition(gameCoords)
+  end
+  
+  Input.IsActionPressed = function(action, controllerId)
+    if mod.doRender and not game:IsPaused() then
+      return false
+    end
+    
+    return mod.input.isActionPressed(action, controllerId)
+  end
+  
+  Input.IsActionTriggered = function(action, controllerId)
+    if mod.doRender and not game:IsPaused() then
+      return false
+    end
+    
+    return mod.input.isActionTriggered(action, controllerId)
+  end
+  
+  Input.IsButtonPressed = function(button, controllerId)
+    if mod.doRender and not game:IsPaused() then
+      return false
+    end
+    
+    return mod.input.isButtonPressed(button, controllerId)
+  end
+  
+  Input.IsButtonTriggered = function(button, controllerId)
+    if mod.doRender and not game:IsPaused() then
+      return false
+    end
+    
+    return mod.input.isButtonTriggered(button, controllerId)
+  end
+  
+  Input.IsMouseBtnPressed = function(button)
+    if mod.doRender and not game:IsPaused() then
+      return false
+    end
+    
+    return mod.input.isMouseBtnPressed(button)
+  end
+end
+
 function mod:getButtonAction()
   local keyboard = 0
   
-  if Input.IsButtonTriggered(Keyboard.KEY_LEFT, keyboard) then
+  if mod.input.isButtonTriggered(Keyboard.KEY_LEFT, keyboard) then
     return ButtonAction.ACTION_LEFT
-  elseif Input.IsButtonTriggered(Keyboard.KEY_RIGHT, keyboard) then
+  elseif mod.input.isButtonTriggered(Keyboard.KEY_RIGHT, keyboard) then
     return ButtonAction.ACTION_RIGHT
-  elseif Input.IsButtonTriggered(Keyboard.KEY_SPACE, keyboard) or Input.IsButtonTriggered(Keyboard.KEY_ENTER, keyboard) then
+  elseif mod.input.isButtonTriggered(Keyboard.KEY_SPACE, keyboard) or mod.input.isButtonTriggered(Keyboard.KEY_ENTER, keyboard) then
     return ButtonAction.ACTION_MENUCONFIRM
   end
   
@@ -179,11 +257,11 @@ function mod:getButtonAction()
     local controller = game:GetPlayer(i).ControllerIndex
     
     if controller > keyboard then
-      if Input.IsActionTriggered(ButtonAction.ACTION_LEFT, controller) then
+      if mod.input.isActionTriggered(ButtonAction.ACTION_LEFT, controller) then
         return ButtonAction.ACTION_LEFT
-      elseif Input.IsActionTriggered(ButtonAction.ACTION_RIGHT, controller) then
+      elseif mod.input.isActionTriggered(ButtonAction.ACTION_RIGHT, controller) then
         return ButtonAction.ACTION_RIGHT
-      elseif Input.IsActionTriggered(ButtonAction.ACTION_MENUCONFIRM, controller) then
+      elseif mod.input.isActionTriggered(ButtonAction.ACTION_MENUCONFIRM, controller) then
         return ButtonAction.ACTION_MENUCONFIRM
       end
     end
@@ -362,6 +440,7 @@ function mod:setupModConfigMenu()
 end
 -- end ModConfigMenu --
 
+mod:overrideInput()
 mod:AddCallback(ModCallbacks.MC_POST_GAME_STARTED, mod.onGameStart)
 mod:AddCallback(ModCallbacks.MC_PRE_GAME_EXIT, mod.onGameExit)
 mod:AddCallback(ModCallbacks.MC_POST_NEW_ROOM, mod.onNewRoom)
@@ -369,9 +448,9 @@ mod:AddCallback(ModCallbacks.MC_POST_UPDATE, mod.onUpdate)
 mod:AddCallback(ModCallbacks.MC_POST_RENDER, mod.onRender)             -- MC_POST_RENDER draws under the HUD
 mod:AddCallback(ModCallbacks.MC_GET_SHADER_PARAMS, mod.onRenderShader) -- MC_GET_SHADER_PARAMS draws over the HUD
 mod:AddCallback(ModCallbacks.MC_POST_PICKUP_INIT, mod.onPickupInit, PickupVariant.PICKUP_BIGCHEST)
-mod:AddCallback(ModCallbacks.MC_INPUT_ACTION, mod.onInputAction)
 mod:AddCallback(ModCallbacks.MC_ENTITY_TAKE_DMG, mod.onEntityTakeDmg, EntityType.ENTITY_PLAYER)
 mod:AddCallback(ModCallbacks.MC_PRE_PLAYER_COLLISION, mod.onPrePlayerCollision)
+mod:AddCallback(ModCallbacks.MC_INPUT_ACTION, mod.onInputAction)
 
 if ModConfigMenu then
   mod:setupModConfigMenu()
