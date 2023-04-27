@@ -331,7 +331,7 @@ function mod:doLambLogic()
     mod:spawnBigChest(room:GetGridPosition(centerIdx))
     
     local rng = RNG()
-    rng:SetSeed(room:GetSpawnSeed(), mod.rngShiftIdx) -- GetAwardSeed, GetDecorationSeed
+    rng:SetSeed(room:GetAwardSeed(), mod.rngShiftIdx) -- GetSpawnSeed, GetDecorationSeed
     if rng:RandomFloat() < 0.2 then -- 20%
       mod:spawnVoidPortal(room:GetGridPosition(centerIdx + (2 * 15))) -- 2 spaces lower
     end
