@@ -132,7 +132,7 @@ function mod:onPickupInit(pickup)
   local room = game:GetRoom()
   
   -- room:IsClear doesn't work with mega satan
-  if not game:IsGreedMode() and not mod:isAnyChallenge() and (room:GetType() == RoomType.ROOM_BOSS or mod:isDogma()) then
+  if not game:IsGreedMode() and not mod:isAnyChallenge() and (room:GetType() == RoomType.ROOM_BOSS or room:IsCurrentRoomLastBoss()) then
     if not (mod:isIsaac() and mod:hasCollectible(CollectibleType.COLLECTIBLE_POLAROID)) and
        not (mod:isSatan() and mod:hasCollectible(CollectibleType.COLLECTIBLE_NEGATIVE)) and
        not mod:isTheLamb()
@@ -390,16 +390,6 @@ function mod:isTheLamb()
          not level:IsAltStage() and
          roomDesc.Data.Type == RoomType.ROOM_BOSS and
          roomDesc.GridIndex >= 0
-end
-
--- type is ROOM_DEFAULT
-function mod:isDogma()
-  local level = game:GetLevel()
-  local roomDesc = level:GetCurrentRoomDesc()
-  
-  return level:GetStage() == LevelStage.STAGE8 and
-         roomDesc.Data.Shape == RoomShape.ROOMSHAPE_1x2 and
-         roomDesc.GridIndex == 109 -- living room
 end
 
 function mod:closeOtherMods()
