@@ -47,22 +47,6 @@ function mod:onUpdate()
   if mod.doRender and not game:IsPaused() then
     mod.sprite:Update()
   end
-  
-  if game:IsGreedMode() or mod:isAnyChallenge() then
-    return
-  end
-  
-  if mod.state.enableDialog then
-    return
-  end
-  
-  local room = game:GetRoom()
-  
-  -- doing this here rather than in MC_POST_NPC_DEATH/MC_POST_ENTITY_KILL
-  -- because certain things like friendly ball w/ attack flies don't trigger those callbacks
-  if mod:isTheLamb() and not room:IsClear() then
-    mod:doLambLogic()
-  end
 end
 
 -- MC_POST_RENDER runs before MC_GET_SHADER_PARAMS
@@ -139,6 +123,21 @@ function mod:onPickupInit(pickup)
     then
       mod:initDialog()
     end
+  end
+end
+
+function mod:onPreSpawnAward()
+  if game:IsGreedMode() or mod:isAnyChallenge() then
+    return
+  end
+  
+  if mod.state.enableDialog then
+    return
+  end
+  
+  if mod:isTheLamb() then
+    mod:doLambLogic()
+    return true
   end
 end
 
@@ -323,29 +322,15 @@ function mod:hasCollectible(collectible)
 end
 
 function mod:doLambLogic()
-  if not mod:hasActiveLambEnemy() then
-    local room = game:GetRoom()
-    room:SetClear(true) -- short circuit the room logic, including spawning the chest, void portal, and victory lap dialog
-    
-    local centerIdx = room:GetGridIndex(room:GetCenterPos())
-    mod:spawnBigChest(room:GetGridPosition(centerIdx))
-    
-    local rng = RNG()
-    rng:SetSeed(room:GetAwardSeed(), mod.rngShiftIdx) -- GetSpawnSeed, GetDecorationSeed
-    if rng:RandomFloat() < 0.2 then -- 20%
-      mod:spawnVoidPortal(room:GetGridPosition(centerIdx + (2 * room:GetGridWidth()))) -- 2 spaces lower
-    end
-  end
-end
-
-function mod:hasActiveLambEnemy()
-  for _, v in ipairs(Isaac.GetRoomEntities()) do
-    if v:IsActiveEnemy(true) and v:CanShutDoors() then
-      return true
-    end
-  end
+  local room = game:GetRoom()
+  local centerIdx = room:GetGridIndex(room:GetCenterPos())
+  mod:spawnBigChest(room:GetGridPosition(centerIdx))
   
-  return false
+  local rng = RNG()
+  rng:SetSeed(room:GetAwardSeed(), mod.rngShiftIdx) -- GetSpawnSeed, GetDecorationSeed
+  if rng:RandomFloat() < 0.2 then -- 20%
+    mod:spawnVoidPortal(room:GetGridPosition(centerIdx + (2 * room:GetGridWidth()))) -- 2 spaces lower
+  end
 end
 
 function mod:spawnBigChest(pos)
@@ -353,7 +338,15 @@ function mod:spawnBigChest(pos)
 end
 
 function mod:spawnVoidPortal(pos)
+  local room = game:GetRoom()
+  
   local portal = Isaac.GridSpawn(GridEntityType.GRID_TRAPDOOR, 1, pos, true)
+  if portal:GetType() ~= GridEntityType.GRID_TRAPDOOR then
+    room:RemoveGridEntity(room:GetGridIndex(pos), 0, false)
+    room:Update()
+    portal = Isaac.GridSpawn(GridEntityType.GRID_TRAPDOOR, 1, pos, true)
+  end
+  
   portal.VarData = 1
   portal:GetSprite():Load('gfx/grid/voidtrapdoor.anm2', true)
 end
@@ -438,6 +431,7 @@ mod:AddCallback(ModCallbacks.MC_POST_UPDATE, mod.onUpdate)
 mod:AddCallback(ModCallbacks.MC_POST_RENDER, mod.onRender)             -- MC_POST_RENDER draws under the HUD
 mod:AddCallback(ModCallbacks.MC_GET_SHADER_PARAMS, mod.onRenderShader) -- MC_GET_SHADER_PARAMS draws over the HUD
 mod:AddCallback(ModCallbacks.MC_POST_PICKUP_INIT, mod.onPickupInit, PickupVariant.PICKUP_BIGCHEST)
+mod:AddCallback(ModCallbacks.MC_PRE_SPAWN_CLEAN_AWARD, mod.onPreSpawnAward)
 mod:AddCallback(ModCallbacks.MC_ENTITY_TAKE_DMG, mod.onEntityTakeDmg, EntityType.ENTITY_PLAYER)
 mod:AddCallback(ModCallbacks.MC_PRE_PLAYER_COLLISION, mod.onPrePlayerCollision)
 mod:AddCallback(ModCallbacks.MC_INPUT_ACTION, mod.onInputAction)
