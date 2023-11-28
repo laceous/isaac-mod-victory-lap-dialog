@@ -391,9 +391,22 @@ function mod:closeOtherMods()
     ModConfigMenu.CloseConfigMenu()
   end
   
-  -- encyclopedia
+  -- encyclopedia / dss
   if DeadSeaScrollsMenu and DeadSeaScrollsMenu.IsOpen() then
     DeadSeaScrollsMenu.CloseMenu(true, true)
+  end
+  
+  -- salem (will come back in the next room)
+  -- this could be extended to all NPCs / projectiles
+  local salemType = Isaac.GetEntityTypeByName('Salem')       -- 894
+  local salemVariant = Isaac.GetEntityVariantByName('Salem') -- 1626
+  if salemType > 0 and salemVariant > -1 then
+    for _, v in ipairs(Isaac.FindByType(salemType, salemVariant, -1, false, false)) do
+      local salem = v:ToNPC()
+      if salem then
+        salem:Remove()
+      end
+    end
   end
 end
 
