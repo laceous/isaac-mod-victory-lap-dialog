@@ -14,9 +14,10 @@ This mod uses a shader which allows us to draw over the HUD. I'd recommend insta
 Mod Config Menu can be used to enable or disable the victory lap dialog. Disabling includes disabling it after The Lamb.
 
 The player shouldn't be able to take damage while the dialog is on screen. [url=https://steamcommunity.com/sharedfiles/filedetails/?id=3067725964]Salem[/url] will be removed since she's able to bypass this.</description>
-    <version>1.25</version>
+    <version>1.26</version>
     <visibility>Public</visibility>
     <tag id="Lua"/>
     <tag id="Bosses"/>
     <tag id="Tweaks"/>
+    <tag id="Shaders"/>
 </metadata>
