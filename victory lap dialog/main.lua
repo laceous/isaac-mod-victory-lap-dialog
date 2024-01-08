@@ -342,13 +342,25 @@ function mod:spawnVoidPortal(pos)
   
   local portal = Isaac.GridSpawn(GridEntityType.GRID_TRAPDOOR, 1, pos, true)
   if portal:GetType() ~= GridEntityType.GRID_TRAPDOOR then
-    room:RemoveGridEntity(room:GetGridIndex(pos), 0, false)
-    room:Update()
+    mod:removeGridEntity(room:GetGridIndex(pos), 0, false, true)
     portal = Isaac.GridSpawn(GridEntityType.GRID_TRAPDOOR, 1, pos, true)
   end
   
   portal.VarData = 1
   portal:GetSprite():Load('gfx/grid/voidtrapdoor.anm2', true)
+end
+
+function mod:removeGridEntity(gridIdx, pathTrail, keepDecoration, update)
+  local room = game:GetRoom()
+  
+  if REPENTOGON then
+    room:RemoveGridEntityImmediate(gridIdx, pathTrail, keepDecoration)
+  else
+    room:RemoveGridEntity(gridIdx, pathTrail, keepDecoration)
+    if update then
+      room:Update()
+    end
+  end
 end
 
 function mod:isAnyChallenge()
