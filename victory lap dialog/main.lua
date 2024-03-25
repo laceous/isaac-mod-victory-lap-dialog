@@ -117,6 +117,10 @@ function mod:onPickupInit(pickup)
     return
   end
   
+  if not pickup:Exists() then
+    return
+  end
+  
   local room = game:GetRoom()
   
   -- room:IsClear doesn't work with mega satan
@@ -463,7 +467,7 @@ else
   mod:AddCallback(ModCallbacks.MC_POST_RENDER, mod.onRender)             -- MC_POST_RENDER draws under the HUD
   mod:AddCallback(ModCallbacks.MC_GET_SHADER_PARAMS, mod.onRenderShader) -- MC_GET_SHADER_PARAMS draws over the HUD
 end
-mod:AddCallback(ModCallbacks.MC_POST_PICKUP_INIT, mod.onPickupInit, PickupVariant.PICKUP_BIGCHEST)
+mod:AddPriorityCallback(ModCallbacks.MC_POST_PICKUP_INIT, CallbackPriority.LATE, mod.onPickupInit, PickupVariant.PICKUP_BIGCHEST)
 mod:AddCallback(ModCallbacks.MC_PRE_SPAWN_CLEAN_AWARD, mod.onPreSpawnAward)
 mod:AddCallback(ModCallbacks.MC_ENTITY_TAKE_DMG, mod.onEntityTakeDmg, EntityType.ENTITY_PLAYER)
 mod:AddCallback(ModCallbacks.MC_PRE_PLAYER_COLLISION, mod.onPrePlayerCollision)
