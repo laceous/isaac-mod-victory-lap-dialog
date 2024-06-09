@@ -339,6 +339,12 @@ function mod:doLambLogic()
   if rng:RandomFloat() < 0.2 then -- 20%
     mod:spawnVoidPortal(room:GetGridPosition(centerIdx + (2 * room:GetGridWidth()))) -- 2 spaces lower
   end
+  
+  if REPENTOGON and game:GetVictoryLap() == 0 then
+    local gameData = Isaac.GetPersistentGameData()
+    gameData:IncreaseEventCounter(EventCounter.LAMB_KILLS, 1)
+    game:RecordPlayerCompletion(CompletionType.LAMB)
+  end
 end
 
 function mod:spawnBigChest(pos)
