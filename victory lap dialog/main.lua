@@ -125,8 +125,12 @@ function mod:onPickupInit(pickup)
   
   -- room:IsClear doesn't work with mega satan
   if not game:IsGreedMode() and not mod:isAnyChallenge() and (room:GetType() == RoomType.ROOM_BOSS or room:IsCurrentRoomLastBoss()) then
-    if not (mod:isIsaac() and mod:hasCollectible(CollectibleType.COLLECTIBLE_POLAROID)) and
-       not (mod:isSatan() and mod:hasCollectible(CollectibleType.COLLECTIBLE_NEGATIVE)) and
+    local hasPolaroid = mod:hasCollectible(CollectibleType.COLLECTIBLE_POLAROID)
+    local hasNegative = mod:hasCollectible(CollectibleType.COLLECTIBLE_NEGATIVE)
+    
+    -- support switch tracks mod
+    if not (mod:isIsaac() and (hasPolaroid or (switchtracks_1888830246 and hasNegative))) and
+       not (mod:isSatan() and (hasNegative or (switchtracks_1888830246 and hasPolaroid))) and
        not mod:isTheLamb()
     then
       mod:initDialog()
